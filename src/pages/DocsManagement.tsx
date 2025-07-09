@@ -44,27 +44,18 @@ const DocsManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: docs = [], isLoading, isStreaming } = useStreamingData({
+  const { data: docs = [], isLoading } = useQuery({
     queryKey: ['docs-management'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('docs')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Doc[];
+      // Return empty array for now since we don't have docs endpoints
+      return [] as Doc[];
     },
-    streamingDelay: 200,
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const { error } = await supabase.from('docs').insert([{
-        ...data,
-        tags: data.tags ? data.tags.split(',').map((tag: string) => tag.trim()) : [],
-      }]);
-      if (error) throw error;
+      // Doc creation not implemented yet
+      throw new Error('Doc creation not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['docs-management'] });
@@ -79,12 +70,8 @@ const DocsManagement = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { error } = await supabase.from('docs').update({
-        ...data,
-        tags: data.tags ? data.tags.split(',').map((tag: string) => tag.trim()) : [],
-        updated_at: new Date().toISOString(),
-      }).eq('id', id);
-      if (error) throw error;
+      // Doc update not implemented yet
+      throw new Error('Doc update not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['docs-management'] });
@@ -99,8 +86,8 @@ const DocsManagement = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('docs').delete().eq('id', id);
-      if (error) throw error;
+      // Doc deletion not implemented yet
+      throw new Error('Doc deletion not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['docs-management'] });
