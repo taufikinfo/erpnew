@@ -9,32 +9,40 @@ from app.core.auth import get_current_user
 router = APIRouter(tags=["profile"])
 
 @router.get("/", response_model=ProfileResponse)
-def get_current_profile(
-    current_user: dict = Depends(get_current_user),
+async def get_current_profile(
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get current user's profile."""
-    profile = db.query(Profile).filter(Profile.id == current_user["id"]).first()
+    profile = db.query(Profile).filter(Profile.email == current_user.email).first()
     if not profile:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Profile not found"
+        # Create a profile if it doesn't exist
+        profile = Profile(
+            id=current_user.id,
+            email=current_user.email
         )
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
     return profile
 
 @router.put("/", response_model=ProfileResponse)
-def update_profile(
+async def update_profile(
     profile_update: ProfileUpdate,
-    current_user: dict = Depends(get_current_user),
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Update current user's profile."""
-    profile = db.query(Profile).filter(Profile.id == current_user["id"]).first()
+    profile = db.query(Profile).filter(Profile.email == current_user.email).first()
     if not profile:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Profile not found"
+        # Create a profile if it doesn't exist
+        profile = Profile(
+            id=current_user.id,
+            email=current_user.email
         )
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
     
     # Update profile fields
     for field, value in profile_update.dict(exclude_unset=True).items():
@@ -45,19 +53,30 @@ def update_profile(
     return profile
 
 @router.get("/notifications")
-def get_notification_preferences(
-    current_user: dict = Depends(get_current_user),
+async def get_notification_preferences(
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get user's notification preferences."""
+    # Get the profile first to get the correct ID
+    profile = db.query(Profile).filter(Profile.email == current_user.email).first()
+    if not profile:
+        profile = Profile(
+            id=current_user.id,
+            email=current_user.email
+        )
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+    
     preferences = db.query(UserPreference).filter(
-        UserPreference.user_id == current_user["id"]
+        UserPreference.user_id == profile.id
     ).first()
     
     if not preferences:
         # Create default preferences if none exist
         preferences = UserPreference(
-            user_id=current_user["id"],
+            user_id=profile.id,
             email_notifications=True,
             push_notifications=False,
             project_updates=True,
@@ -85,18 +104,29 @@ def get_notification_preferences(
     }
 
 @router.put("/notifications")
-def update_notification_preferences(
+async def update_notification_preferences(
     notifications: dict,
-    current_user: dict = Depends(get_current_user),
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Update user's notification preferences."""
+    # Get the profile first to get the correct ID
+    profile = db.query(Profile).filter(Profile.email == current_user.email).first()
+    if not profile:
+        profile = Profile(
+            id=current_user.id,
+            email=current_user.email
+        )
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+    
     preferences = db.query(UserPreference).filter(
-        UserPreference.user_id == current_user["id"]
+        UserPreference.user_id == profile.id
     ).first()
     
     if not preferences:
-        preferences = UserPreference(user_id=current_user["id"])
+        preferences = UserPreference(user_id=profile.id)
         db.add(preferences)
     
     # Update notification settings

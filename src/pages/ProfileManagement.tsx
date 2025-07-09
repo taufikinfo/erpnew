@@ -22,6 +22,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import ProfileSkeleton from '@/components/skeletons/ProfileSkeleton';
 import { useTheme } from '@/contexts/ThemeContext';
+import { PageContainer } from '@/components/layout/PageContainer';
 
 const ProfileManagement = () => {
   const { user } = useAuth();
@@ -186,7 +187,7 @@ const ProfileManagement = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 p-6">
+    <PageContainer>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -588,7 +589,7 @@ const ProfileManagement = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   );
 };
 

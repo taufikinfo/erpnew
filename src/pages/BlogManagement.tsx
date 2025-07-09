@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -52,23 +52,15 @@ const BlogManagement = () => {
   const { data: blogs = [], isLoading } = useQuery({
     queryKey: ['blogs-management'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('blogs')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Blog[];
+      // Return empty array for now since we don't have blog endpoints
+      return [] as Blog[];
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const { error } = await supabase.from('blogs').insert([{
-        ...data,
-        tags: data.tags ? data.tags.split(',').map((tag: string) => tag.trim()) : [],
-      }]);
-      if (error) throw error;
+    mutationFn: async (data: Partial<Blog>) => {
+      // Blog creation not implemented yet
+      throw new Error('Blog creation not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['blogs-management'] });
@@ -82,13 +74,9 @@ const BlogManagement = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { error } = await supabase.from('blogs').update({
-        ...data,
-        tags: data.tags ? data.tags.split(',').map((tag: string) => tag.trim()) : [],
-        updated_at: new Date().toISOString(),
-      }).eq('id', id);
-      if (error) throw error;
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Blog> }) => {
+      // Blog update not implemented yet
+      throw new Error('Blog update not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['blogs-management'] });
@@ -103,8 +91,8 @@ const BlogManagement = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('blogs').delete().eq('id', id);
-      if (error) throw error;
+      // Blog deletion not implemented yet
+      throw new Error('Blog deletion not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['blogs-management'] });

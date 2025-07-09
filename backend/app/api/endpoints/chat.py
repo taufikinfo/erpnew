@@ -38,7 +38,7 @@ class TypingIndicatorResponse(BaseModel):
         from_attributes = True
 
 @router.get("/messages", response_model=List[MessageResponse])
-def get_messages(
+async def get_messages(
     skip: int = 0,
     limit: int = 100,
     current_user = Depends(get_current_user),
@@ -65,7 +65,7 @@ def get_messages(
     return result
 
 @router.post("/messages", response_model=MessageResponse)
-def create_message(
+async def create_message(
     message: MessageCreate,
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -95,7 +95,7 @@ def create_message(
     }
 
 @router.get("/typing-indicators", response_model=List[TypingIndicatorResponse])
-def get_typing_indicators(
+async def get_typing_indicators(
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -103,6 +103,7 @@ def get_typing_indicators(
     # Clean up old typing indicators (older than 5 seconds)
     five_seconds_ago = datetime.now() - timedelta(seconds=5)
     db.query(ChatTypingIndicator).filter(ChatTypingIndicator.updated_at < five_seconds_ago).delete()
+    db.commit()
     
     indicators = db.query(ChatTypingIndicator).filter(
         ChatTypingIndicator.is_typing == True,
@@ -127,7 +128,7 @@ def get_typing_indicators(
     return result
 
 @router.post("/typing-indicators", response_model=TypingIndicatorResponse)
-def update_typing_indicator(
+async def update_typing_indicator(
     typing_data: TypingIndicatorCreate,
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
