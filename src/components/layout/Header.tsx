@@ -1,6 +1,7 @@
 import { Bell, Menu, User, LogOut, Settings, Moon, Sun } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,13 +22,29 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { user, logout } = useAuth();
   const { darkMode, toggleDarkMode } = useTheme();
+  const { profile } = useProfile();
 
-  // Get user display name from email or use fallback
+  // Get user display name from profile or fallback to email
   const getUserDisplayName = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name} ${profile.last_name}`;
+    }
     if (user?.email) {
       return user.email.split('@')[0];
     }
     return 'User';
+  };
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase();
+    }
+    if (user?.email) {
+      const emailName = user.email.split('@')[0];
+      return emailName.substring(0, 2).toUpperCase();
+    }
+    return 'U';
   };
 
   return (
@@ -76,11 +93,13 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-white" />
+                  <span className="text-white font-medium text-sm">{getUserInitials()}</span>
                 </div>
                 <div className="text-left">
                   <div className="font-medium text-sm text-gray-900 dark:text-gray-100">{getUserDisplayName()}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">User</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {profile?.job_title || 'User'}
+                  </div>
                 </div>
               </Button>
             </DropdownMenuTrigger>
