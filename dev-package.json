@@ -1,0 +1,17 @@
+{
+  "name": "erp-fullstack-dev",
+  "version": "1.0.0",
+  "description": "Development script for running backend and frontend together",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently --kill-others-on-fail \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && call venv\\Scripts\\activate.bat && python run.py",
+    "frontend": "pnpm dev",
+    "setup-backend": "cd backend && python -m venv venv && call venv\\Scripts\\activate.bat && pip install -r requirements.txt && python seed_data.py",
+    "setup-frontend": "pnpm install",
+    "setup": "npm run setup-backend && npm run setup-frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

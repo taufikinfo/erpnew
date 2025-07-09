@@ -1,0 +1,6 @@
+# Backend requirements are in backend/requirements.txt
+# Frontend requirements are in package.json
+
+# To set up the project:
+# 1. Frontend: pnpm install
+# 2. Backend: cd backend && pip install -r requirements.txt
