@@ -16,13 +16,18 @@ import {
   Trash2
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useInvoices, useExpenses } from '@/hooks/useFinance';
+import { useInvoices, useExpenses, useTransactions } from '@/hooks/useFinance';
 import { AdvancedDataTable, ColumnDef } from '@/components/table/AdvancedDataTable';
 import FinanceSkeleton from '@/components/skeletons/FinanceSkeleton';
+import InvoiceDialog from '@/components/finance/InvoiceDialog';
+import ExpenseDialog from '@/components/finance/ExpenseDialog';
+import TransactionDialog from '@/components/finance/TransactionDialog';
+import DeleteConfirmDialog from '@/components/finance/DeleteConfirmDialog';
 
 const Finance = () => {
-  const { invoices, isLoading: invoicesLoading } = useInvoices();
-  const { expenses, isLoading: expensesLoading } = useExpenses();
+  const { invoices, isLoading: invoicesLoading, deleteInvoice } = useInvoices();
+  const { expenses, isLoading: expensesLoading, deleteExpense } = useExpenses();
+  const { transactions, isLoading: transactionsLoading, deleteTransaction } = useTransactions();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -34,7 +39,19 @@ const Finance = () => {
   };
 
   // Invoice column definitions
-  const invoiceColumns: ColumnDef<any>[] = [
+  const invoiceColumns: ColumnDef<{
+    id: string;
+    invoice_number: string;
+    client_name: string;
+    amount: number;
+    status: string;
+    issue_date: string;
+    due_date: string;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+    created_by: string | null;
+  }>[] = [
     {
       id: 'invoice_number',
       header: 'Invoice Number',
@@ -90,7 +107,17 @@ const Finance = () => {
   ];
 
   // Expense column definitions
-  const expenseColumns: ColumnDef<any>[] = [
+  const expenseColumns: ColumnDef<{
+    id: string;
+    expense_number: string;
+    category: string;
+    amount: number;
+    vendor: string;
+    expense_date: string;
+    created_at: string;
+    updated_at: string;
+    created_by: string | null;
+  }>[] = [
     {
       id: 'expense_number',
       header: 'Expense Number',
@@ -132,35 +159,175 @@ const Finance = () => {
     }
   ];
 
-  const invoiceActions = (invoice: any) => (
+  // Transaction column definitions
+  const transactionColumns: ColumnDef<{
+    id: string;
+    type: string;
+    amount: number;
+    description: string;
+    date: string;
+    category: string;
+    reference: string | null;
+    created_at: string;
+    updated_at: string;
+    created_by: string | null;
+  }>[] = [
+    {
+      id: 'type',
+      header: 'Type',
+      accessorKey: 'type',
+      sortable: true,
+      filterable: true,
+      filterType: 'select',
+      filterOptions: ['income', 'expense', 'transfer'],
+      cell: (transaction) => (
+        <Badge className={transaction.type === 'income' ? 'bg-green-100 text-green-800' : 
+                           transaction.type === 'expense' ? 'bg-red-100 text-red-800' : 
+                           'bg-blue-100 text-blue-800'}>
+          {transaction.type}
+        </Badge>
+      )
+    },
+    {
+      id: 'description',
+      header: 'Description',
+      accessorKey: 'description',
+      sortable: true,
+      filterable: true,
+      cell: (transaction) => <span className="font-medium">{transaction.description}</span>
+    },
+    {
+      id: 'category',
+      header: 'Category',
+      accessorKey: 'category',
+      sortable: true,
+      filterable: true,
+      filterType: 'select',
+      filterOptions: ['Sales', 'Marketing', 'Office', 'Travel', 'Utilities', 'Other']
+    },
+    {
+      id: 'amount',
+      header: 'Amount',
+      accessorKey: 'amount',
+      sortable: true,
+      cell: (transaction) => (
+        <span className={`font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+          {transaction.type === 'income' ? '+' : '-'}${Number(transaction.amount).toLocaleString()}
+        </span>
+      )
+    },
+    {
+      id: 'date',
+      header: 'Date',
+      accessorKey: 'date',
+      sortable: true,
+      filterable: true,
+      filterType: 'date'
+    },
+    {
+      id: 'reference',
+      header: 'Reference',
+      accessorKey: 'reference',
+      sortable: true,
+      filterable: true,
+      cell: (transaction) => transaction.reference || '-'
+    }
+  ];
+
+  const invoiceActions = (invoice: {
+    id: string;
+    invoice_number: string;
+    client_name: string;
+    amount: number;
+    status: string;
+    issue_date: string;
+    due_date: string;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+    created_by: string | null;
+  }) => (
     <div className="flex space-x-2">
-      <Button size="sm" variant="ghost">
-        <Eye className="h-4 w-4" />
-      </Button>
-      <Button size="sm" variant="ghost">
-        <Edit className="h-4 w-4" />
-      </Button>
-      <Button size="sm" variant="ghost" className="text-red-600">
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      <InvoiceDialog mode="view" invoice={invoice} trigger={
+        <Button size="sm" variant="ghost">
+          <Eye className="h-4 w-4" />
+        </Button>
+      } />
+      <InvoiceDialog mode="edit" invoice={invoice} trigger={
+        <Button size="sm" variant="ghost">
+          <Edit className="h-4 w-4" />
+        </Button>
+      } />
+      <DeleteConfirmDialog
+        title="Delete Invoice"
+        description="Are you sure you want to delete this invoice? This action cannot be undone."
+        onConfirm={() => deleteInvoice(invoice.id)}
+      />
     </div>
   );
 
-  const expenseActions = (expense: any) => (
+  const expenseActions = (expense: {
+    id: string;
+    expense_number: string;
+    category: string;
+    amount: number;
+    vendor: string;
+    expense_date: string;
+    created_at: string;
+    updated_at: string;
+    created_by: string | null;
+  }) => (
     <div className="flex space-x-2">
-      <Button size="sm" variant="ghost">
-        <Eye className="h-4 w-4" />
-      </Button>
-      <Button size="sm" variant="ghost">
-        <Edit className="h-4 w-4" />
-      </Button>
-      <Button size="sm" variant="ghost" className="text-red-600">
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      <ExpenseDialog mode="view" expense={expense} trigger={
+        <Button size="sm" variant="ghost">
+          <Eye className="h-4 w-4" />
+        </Button>
+      } />
+      <ExpenseDialog mode="edit" expense={expense} trigger={
+        <Button size="sm" variant="ghost">
+          <Edit className="h-4 w-4" />
+        </Button>
+      } />
+      <DeleteConfirmDialog
+        title="Delete Expense"
+        description="Are you sure you want to delete this expense? This action cannot be undone."
+        onConfirm={() => deleteExpense(expense.id)}
+      />
     </div>
   );
 
-  if (invoicesLoading || expensesLoading) {
+  const transactionActions = (transaction: {
+    id: string;
+    type: string;
+    amount: number;
+    description: string;
+    date: string;
+    category: string;
+    reference: string | null;
+    created_at: string;
+    updated_at: string;
+    created_by: string | null;
+  }) => (
+    <div className="flex space-x-2">
+      <TransactionDialog mode="view" transaction={transaction} trigger={
+        <Button size="sm" variant="ghost">
+          <Eye className="h-4 w-4" />
+        </Button>
+      } />
+      <TransactionDialog mode="edit" transaction={transaction} trigger={
+        <Button size="sm" variant="ghost">
+          <Edit className="h-4 w-4" />
+        </Button>
+      } />
+      <DeleteConfirmDialog
+        title="Delete Transaction"
+        description="Are you sure you want to delete this transaction? This action cannot be undone."
+        onConfirm={() => deleteTransaction(transaction.id)}
+      />
+    </div>
+  );
+
+  if (invoicesLoading || expensesLoading || transactionsLoading) {
     return <FinanceSkeleton />;
   }
 
@@ -169,7 +336,7 @@ const Finance = () => {
   const outstanding = invoices.filter(inv => inv.status !== 'paid').reduce((sum, inv) => sum + Number(inv.amount), 0);
 
   // Process data for revenue vs expenses chart by month
-  const revenueData = invoices.reduce((acc: any[], invoice) => {
+  const revenueData = invoices.reduce((acc: { month: string; revenue: number; expenses: number; profit: number; }[], invoice) => {
     const month = new Date(invoice.issue_date).toLocaleDateString('en-US', { month: 'short' });
     const existing = acc.find(item => item.month === month);
     const amount = Number(invoice.amount);
@@ -225,10 +392,7 @@ const Finance = () => {
             <Download className="mr-2 h-4 w-4" />
             Export Report
           </Button>
-          <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-            <Plus className="mr-2 h-4 w-4" />
-            New Invoice
-          </Button>
+          <InvoiceDialog mode="create" />
         </div>
       </div>
 
@@ -317,13 +481,21 @@ const Finance = () => {
 
       {/* Tabs for different financial modules */}
       <Tabs defaultValue="invoices" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
+          <TabsTrigger value="transactions">Transactions</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="invoices" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold">Invoices</h3>
+              <p className="text-sm text-gray-600">Manage your customer invoices and payments</p>
+            </div>
+            <InvoiceDialog mode="create" />
+          </div>
           <AdvancedDataTable
             data={invoices}
             columns={invoiceColumns}
@@ -336,6 +508,13 @@ const Finance = () => {
         </TabsContent>
 
         <TabsContent value="expenses" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold">Expenses</h3>
+              <p className="text-sm text-gray-600">Track and manage business expenses</p>
+            </div>
+            <ExpenseDialog mode="create" />
+          </div>
           <AdvancedDataTable
             data={expenses}
             columns={expenseColumns}
@@ -343,6 +522,25 @@ const Finance = () => {
             description="Track and manage business expenses"
             searchPlaceholder="Search expenses by number, category, vendor..."
             actions={expenseActions}
+            defaultPageSize={10}
+          />
+        </TabsContent>
+
+        <TabsContent value="transactions" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold">Transactions</h3>
+              <p className="text-sm text-gray-600">View and manage all financial transactions</p>
+            </div>
+            <TransactionDialog mode="create" />
+          </div>
+          <AdvancedDataTable
+            data={transactions}
+            columns={transactionColumns}
+            title="Transactions"
+            description="View and manage all financial transactions"
+            searchPlaceholder="Search transactions by type, description, category..."
+            actions={transactionActions}
             defaultPageSize={10}
           />
         </TabsContent>

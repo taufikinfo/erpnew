@@ -31,7 +31,22 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: 'An error occurred' }));
-      throw new Error(error.detail || 'Request failed');
+      console.error('API Error:', error);
+      
+      // Handle different error formats
+      if (error.detail) {
+        if (Array.isArray(error.detail)) {
+          // Validation errors from FastAPI
+          const validationErrors = error.detail.map((err: { loc: string[]; msg: string }) => 
+            `${err.loc.join('.')}: ${err.msg}`
+          ).join(', ');
+          throw new Error(`Validation errors: ${validationErrors}`);
+        } else if (typeof error.detail === 'string') {
+          throw new Error(error.detail);
+        }
+      }
+      
+      throw new Error(error.message || 'Request failed');
     }
 
     return response.json();

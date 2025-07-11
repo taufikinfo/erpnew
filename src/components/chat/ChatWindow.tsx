@@ -1,22 +1,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-impor  if (!user) {
-    return (
-      <Card className="min-h-[400px] max-h-[80vh] flex flex-col">
-        <CardContent className="flex items-center justify-center h-full">
-          <p className="text-muted-foreground">Please log in to access chat</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="min-h-[400px] max-h-[80vh] flex flex-col")rdContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Send, MessageCircle, Users } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Send, MessageCircle, Users, Smile } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -26,8 +16,19 @@ export const ChatWindow: React.FC = () => {
   const { messages, typingUsers, isLoading, sendMessage, updateTypingStatus, currentUserName } = useChat();
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Emoticon categories
+  const emoticons = {
+    smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙'],
+    emotions: ['🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '😐', '😑', '😶', '🙄', '😏', '😣'],
+    gestures: ['👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👏', '🙌', '👐', '🤲', '🤝', '🙏'],
+    objects: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '⭐'],
+    nature: ['🌞', '🌝', '🌛', '🌜', '🌚', '🌕', '🌖', '🌗', '🌘', '🌑', '🌒', '🌓', '🌔', '🌙', '⭐', '🌟', '💫', '✨', '☄️', '☀️']
+  };
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -77,9 +78,28 @@ export const ChatWindow: React.FC = () => {
     }
   };
 
+  const handleEmojiClick = (emoji: string) => {
+    const input = inputRef.current;
+    if (input) {
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+      const newValue = newMessage.slice(0, start) + emoji + newMessage.slice(end);
+      setNewMessage(newValue);
+      
+      // Set cursor position after the emoji
+      setTimeout(() => {
+        input.setSelectionRange(start + emoji.length, start + emoji.length);
+        input.focus();
+      }, 0);
+    } else {
+      setNewMessage(prev => prev + emoji);
+    }
+    setShowEmojiPicker(false);
+  };
+
   if (!user) {
     return (
-      <Card className="h-[600px]">
+      <Card className="min-h-[400px] max-h-[80vh] flex flex-col">
         <CardContent className="flex items-center justify-center h-full">
           <p className="text-muted-foreground">Please log in to access chat</p>
         </CardContent>
@@ -88,7 +108,7 @@ export const ChatWindow: React.FC = () => {
   }
 
   return (
-    <Card className="h-[600px] flex flex-col">
+    <Card className="min-h-[400px] max-h-[80vh] flex flex-col">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
           <MessageCircle className="h-5 w-5" />
@@ -101,7 +121,7 @@ export const ChatWindow: React.FC = () => {
       </CardHeader>
       
       <CardContent className="flex-1 flex flex-col gap-3 p-4 pt-0">
-        <ScrollArea className="flex-1 pr-3">
+        <ScrollArea className="flex-1 pr-3 max-h-[60vh]">
           <div className="space-y-3">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -132,7 +152,9 @@ export const ChatWindow: React.FC = () => {
                           {message.user_name}
                         </p>
                       )}
-                      <p className="text-sm">{message.content}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+                        {message.content}
+                      </p>
                       <p className={`text-xs mt-1 opacity-70 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
                         {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                       </p>
@@ -162,15 +184,122 @@ export const ChatWindow: React.FC = () => {
           </div>
         </ScrollArea>
 
-        <form onSubmit={handleSendMessage} className="flex gap-2">
-          <Input
-            value={newMessage}
-            onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
-            placeholder={`Message as ${currentUserName}...`}
-            className="flex-1"
-            maxLength={500}
-          />
+        <form onSubmit={handleSendMessage} className="flex gap-2 mt-auto">
+          <div className="flex-1 flex gap-2">
+            <Input
+              ref={inputRef}
+              value={newMessage}
+              onChange={handleInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder={`Message as ${currentUserName}...`}
+              className="flex-1"
+              maxLength={500}
+            />
+            <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+              <PopoverTrigger asChild>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon"
+                  className="shrink-0"
+                >
+                  <Smile className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="end">
+                <div className="space-y-4">
+                  <h4 className="font-medium text-sm">Choose an emoji</h4>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">Smileys</p>
+                      <div className="grid grid-cols-8 gap-1">
+                        {emoticons.smileys.map((emoji, index) => (
+                          <Button
+                            key={index}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-muted"
+                            onClick={() => handleEmojiClick(emoji)}
+                          >
+                            <span className="text-lg">{emoji}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">Emotions</p>
+                      <div className="grid grid-cols-8 gap-1">
+                        {emoticons.emotions.map((emoji, index) => (
+                          <Button
+                            key={index}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-muted"
+                            onClick={() => handleEmojiClick(emoji)}
+                          >
+                            <span className="text-lg">{emoji}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">Gestures</p>
+                      <div className="grid grid-cols-8 gap-1">
+                        {emoticons.gestures.map((emoji, index) => (
+                          <Button
+                            key={index}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-muted"
+                            onClick={() => handleEmojiClick(emoji)}
+                          >
+                            <span className="text-lg">{emoji}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">Hearts & Objects</p>
+                      <div className="grid grid-cols-8 gap-1">
+                        {emoticons.objects.map((emoji, index) => (
+                          <Button
+                            key={index}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-muted"
+                            onClick={() => handleEmojiClick(emoji)}
+                          >
+                            <span className="text-lg">{emoji}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">Nature</p>
+                      <div className="grid grid-cols-8 gap-1">
+                        {emoticons.nature.map((emoji, index) => (
+                          <Button
+                            key={index}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-muted"
+                            onClick={() => handleEmojiClick(emoji)}
+                          >
+                            <span className="text-lg">{emoji}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
           <Button type="submit" size="icon" disabled={!newMessage.trim()}>
             <Send className="h-4 w-4" />
           </Button>

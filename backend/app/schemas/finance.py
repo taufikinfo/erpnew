@@ -111,17 +111,3 @@ class FinanceExpenseOut(FinanceExpenseBase):
 class FinanceExpenseList(BaseModel):
     items: List[FinanceExpenseOut]
     total: int
-
-
-class FinanceExpenseOut(FinanceExpenseBase):
-    id: str
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    created_by: Optional[str] = None
-    
-    model_config = ConfigDict(from_attributes=True)
-
-
-class FinanceExpenseList(BaseModel):
-    items: List[FinanceExpenseOut]
-    total: int
