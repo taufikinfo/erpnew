@@ -32,6 +32,7 @@ const FAQ = lazy(() => import("./pages/FAQ"));
 const Blog = lazy(() => import("./pages/Blog"));
 const Docs = lazy(() => import("./pages/Docs"));
 const Chat = lazy(() => import("./pages/Chat"));
+const Tickets = lazy(() => import("./pages/Tickets"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -113,6 +114,7 @@ const App = () => {
                 <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
                 <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
                 <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+                <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
                 <Route path="/user-management" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><ProfileManagement /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

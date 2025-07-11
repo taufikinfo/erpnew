@@ -13,6 +13,7 @@ import {
   FolderKanban,
   BarChart3,
   MessageSquare,
+  Ticket,
   Settings,
   User,
   UserCog,
@@ -39,6 +40,7 @@ const navItems = [
   { to: '/manufacturing', icon: Factory, label: 'Manufacturing' },
   { to: '/projects', icon: FolderKanban, label: 'Projects' },
   { to: '/reports', icon: BarChart3, label: 'Reports' },
+  { to: '/tickets', icon: Ticket, label: 'Tickets' },
   { to: '/chat', icon: MessageSquare, label: 'Chat' },
 ];
 

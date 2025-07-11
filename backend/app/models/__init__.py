@@ -35,12 +35,13 @@ class TicketStatus(enum.Enum):
     in_progress = "in_progress"
     resolved = "resolved"
     closed = "closed"
+    reopened = "reopened"
 
 class TicketPriority(enum.Enum):
     low = "low"
     medium = "medium"
     high = "high"
-    critical = "critical"
+    urgent = "urgent"
 
 # --- Table Models ---
 
@@ -305,10 +306,16 @@ class Ticket(BaseModel):
     """Model for support tickets."""
     __tablename__ = "tickets"
     
-    title = Column(Text, nullable=False)
+    ticket_number = Column(String(50), nullable=False, unique=True)
+    title = Column(String(255), nullable=False)
     description = Column(Text, nullable=False)
     status = Column(Enum(TicketStatus), default=TicketStatus.open, nullable=False)
     priority = Column(Enum(TicketPriority), default=TicketPriority.medium, nullable=False)
+    ticket_type = Column(String(50), nullable=False, default="support")  # bug, feature_request, support, improvement, question
+    department = Column(String(100), nullable=True)
+    module = Column(String(100), nullable=True)
+    due_date = Column(DateTime, nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
     created_by = Column(CHAR(36), ForeignKey('profiles.id'), nullable=False)
     assigned_to = Column(CHAR(36), ForeignKey('profiles.id'), nullable=True)
     group_id = Column(CHAR(36), ForeignKey('groups.id'), nullable=True)
@@ -320,6 +327,28 @@ class TicketComment(BaseModel):
     ticket_id = Column(CHAR(36), ForeignKey('tickets.id'), nullable=False)
     user_id = Column(CHAR(36), ForeignKey('profiles.id'), nullable=False)
     comment = Column(Text, nullable=False)
+    is_internal = Column(Boolean, default=False, nullable=False)
+
+class TicketAttachment(BaseModel):
+    """Model for ticket attachments."""
+    __tablename__ = "ticket_attachments"
+    
+    ticket_id = Column(CHAR(36), ForeignKey('tickets.id'), nullable=False)
+    filename = Column(String(255), nullable=False)
+    file_path = Column(String(500), nullable=False)
+    file_size = Column(Integer, nullable=True)
+    mime_type = Column(String(100), nullable=True)
+    uploaded_by = Column(CHAR(36), ForeignKey('profiles.id'), nullable=False)
+
+class TicketHistory(BaseModel):
+    """Model for ticket change history."""
+    __tablename__ = "ticket_history"
+    
+    ticket_id = Column(CHAR(36), ForeignKey('tickets.id'), nullable=False)
+    field_name = Column(String(50), nullable=False)
+    old_value = Column(String(255), nullable=True)
+    new_value = Column(String(255), nullable=True)
+    changed_by = Column(CHAR(36), ForeignKey('profiles.id'), nullable=False)
 
 class TypingIndicator(BaseModel):
     """Model to indicate if a user is currently typing."""

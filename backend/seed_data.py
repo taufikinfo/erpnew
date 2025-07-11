@@ -556,8 +556,26 @@ def seed_data():
         
         # Commit all seeded data
         db.commit()
-        print("✅ Database seeded successfully with 10 records per table!")
-        print("Admin credentials: admin@erpnew.com / admin123")
+        print("✅ Database seeded successfully with comprehensive data!")
+        print("📊 Seeded data summary:")
+        print("   - Users & Profiles: Admin + Test users")
+        print("   - Customers: 10 records")
+        print("   - Employees: 10 records")
+        print("   - Inventory Items: 10 records")
+        print("   - Sales Leads: 10 records")
+        print("   - Projects: 10 records")
+        print("   - Suppliers: 10 records")
+        print("   - Purchase Orders: 10 records")
+        print("   - Work Orders: 10 records")
+        print("   - Docs: 10 records")
+        print("   - Blogs: 10 records")
+        print("   - FAQs: 10 records")
+        print("   - Finance Data: Transactions, Invoices, Expenses")
+        print("   - System Settings: 1 record")
+        print("   - Chat Messages: Sample messages")
+        print("   - Tickets: 15 tickets with various statuses and priorities")
+        print("   - Ticket Comments: Comments on selected tickets")
+        print("🔑 Admin credentials: admin@erpnew.com / admin123")
         
         # Seed finance transactions
         print("Seeding transactions...")
@@ -668,6 +686,251 @@ def seed_data():
         
         db.commit()
         print("✅ Chat messages seeded successfully!")
+
+        # Seed tickets
+        print("Seeding tickets...")
+        
+        # Get user profiles for ticket assignment
+        all_profiles = db.query(Profile).all()
+        ticket_types = ["bug", "feature_request", "support", "improvement", "question"]
+        ticket_statuses = ["open", "in_progress", "resolved", "closed", "reopened"]
+        ticket_priorities = ["low", "medium", "high", "urgent"]
+        departments = ["IT", "Finance", "Human Resources", "Sales", "Marketing", "Operations", "Customer Service"]
+        modules = ["Dashboard", "Finance", "Human Resources", "Inventory", "Sales", "Projects", "Reports", "Settings", "Authentication", "API"]
+        
+        ticket_data = [
+            {
+                "title": "Login page not loading correctly",
+                "description": "Users are experiencing issues with the login page. The page loads but the login form doesn't appear properly on mobile devices.",
+                "priority": "high",
+                "type": "bug",
+                "status": "open",
+                "department": "IT",
+                "module": "Authentication",
+                "due_date": datetime.now() + timedelta(days=3)
+            },
+            {
+                "title": "Add dark mode feature",
+                "description": "Users have requested a dark mode toggle for better accessibility and reduced eye strain during extended use.",
+                "priority": "medium",
+                "type": "feature_request",
+                "status": "open",
+                "department": "IT",
+                "module": "Dashboard",
+                "due_date": datetime.now() + timedelta(days=14)
+            },
+            {
+                "title": "Database connection timeout",
+                "description": "Intermittent database connection timeouts affecting the finance module. Users report slow loading times and occasional errors.",
+                "priority": "urgent",
+                "type": "bug",
+                "status": "in_progress",
+                "department": "IT",
+                "module": "Finance",
+                "due_date": datetime.now() + timedelta(days=1)
+            },
+            {
+                "title": "Export reports to Excel",
+                "description": "Add functionality to export all reports to Excel format for better data manipulation and sharing.",
+                "priority": "medium",
+                "type": "feature_request",
+                "status": "open",
+                "department": "IT",
+                "module": "Reports",
+                "due_date": datetime.now() + timedelta(days=10)
+            },
+            {
+                "title": "Improve inventory search performance",
+                "description": "The inventory search is taking too long when searching through large datasets. Need to optimize the search algorithm.",
+                "priority": "high",
+                "type": "improvement",
+                "status": "in_progress",
+                "department": "IT",
+                "module": "Inventory",
+                "due_date": datetime.now() + timedelta(days=5)
+            },
+            {
+                "title": "How to reset user password",
+                "description": "Need clarification on the process for resetting user passwords. The current documentation is unclear.",
+                "priority": "low",
+                "type": "question",
+                "status": "resolved",
+                "department": "IT",
+                "module": "Settings",
+                "due_date": datetime.now() - timedelta(days=2),
+                "resolved_at": datetime.now() - timedelta(days=1)
+            },
+            {
+                "title": "Sales dashboard shows incorrect data",
+                "description": "The sales dashboard is displaying incorrect revenue figures for the current month. Numbers don't match the actual sales records.",
+                "priority": "urgent",
+                "type": "bug",
+                "status": "open",
+                "department": "Sales",
+                "module": "Dashboard",
+                "due_date": datetime.now() + timedelta(days=2)
+            },
+            {
+                "title": "Add bulk email functionality",
+                "description": "Request to add bulk email sending capability for marketing campaigns and customer communications.",
+                "priority": "medium",
+                "type": "feature_request",
+                "status": "open",
+                "department": "Marketing",
+                "module": "Sales",
+                "due_date": datetime.now() + timedelta(days=21)
+            },
+            {
+                "title": "Payroll calculation error",
+                "description": "There's an error in the payroll calculation for employees with overtime hours. The overtime rate is not being applied correctly.",
+                "priority": "high",
+                "type": "bug",
+                "status": "resolved",
+                "department": "Human Resources",
+                "module": "Human Resources",
+                "due_date": datetime.now() - timedelta(days=3),
+                "resolved_at": datetime.now() - timedelta(days=1)
+            },
+            {
+                "title": "Optimize database queries",
+                "description": "General performance improvement task to optimize slow database queries across the application.",
+                "priority": "medium",
+                "type": "improvement",
+                "status": "in_progress",
+                "department": "IT",
+                "module": "API",
+                "due_date": datetime.now() + timedelta(days=7)
+            },
+            {
+                "title": "Mobile app integration",
+                "description": "Develop mobile app integration for field workers to access inventory and project management features.",
+                "priority": "high",
+                "type": "feature_request",
+                "status": "open",
+                "department": "IT",
+                "module": "Projects",
+                "due_date": datetime.now() + timedelta(days=30)
+            },
+            {
+                "title": "Customer support ticket system",
+                "description": "Implement a customer support ticket system for better customer service management.",
+                "priority": "medium",
+                "type": "feature_request",
+                "status": "closed",
+                "department": "Customer Service",
+                "module": "Dashboard",
+                "due_date": datetime.now() - timedelta(days=10),
+                "resolved_at": datetime.now() - timedelta(days=5)
+            },
+            {
+                "title": "API rate limiting issues",
+                "description": "Some API endpoints are hitting rate limits too quickly, causing integration failures with third-party services.",
+                "priority": "high",
+                "type": "bug",
+                "status": "open",
+                "department": "IT",
+                "module": "API",
+                "due_date": datetime.now() + timedelta(days=4)
+            },
+            {
+                "title": "Financial report discrepancies",
+                "description": "Monthly financial reports show discrepancies between different modules. Need to investigate data synchronization issues.",
+                "priority": "urgent",
+                "type": "bug",
+                "status": "in_progress",
+                "department": "Finance",
+                "module": "Reports",
+                "due_date": datetime.now() + timedelta(days=2)
+            },
+            {
+                "title": "User interface improvements",
+                "description": "General UI/UX improvements based on user feedback. Make the interface more intuitive and user-friendly.",
+                "priority": "low",
+                "type": "improvement",
+                "status": "open",
+                "department": "IT",
+                "module": "Dashboard",
+                "due_date": datetime.now() + timedelta(days=20)
+            }
+        ]
+        
+        # Generate ticket numbers and create tickets
+        for i, data in enumerate(ticket_data):
+            ticket_number = f"TK-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}"
+            
+            # Assign creator and assignee
+            creator = all_profiles[i % len(all_profiles)]
+            assignee = all_profiles[(i + 1) % len(all_profiles)] if i % 3 != 0 else None
+            
+            ticket = Ticket(
+                id=str(uuid.uuid4()),
+                ticket_number=ticket_number,
+                title=data["title"],
+                description=data["description"],
+                status=data["status"],
+                priority=data["priority"],
+                ticket_type=data["type"],
+                department=data["department"],
+                module=data["module"],
+                due_date=data["due_date"],
+                resolved_at=data.get("resolved_at"),
+                created_by=creator.id,
+                assigned_to=assignee.id if assignee else None,
+                created_at=datetime.now() - timedelta(days=i),
+                updated_at=datetime.now() - timedelta(days=i)
+            )
+            db.add(ticket)
+        
+        db.commit()
+        print("✅ Tickets seeded successfully!")
+        
+        # Seed ticket comments
+        print("Seeding ticket comments...")
+        
+        # Get all tickets for adding comments
+        all_tickets = db.query(Ticket).all()
+        
+        comment_templates = [
+            "I'm looking into this issue and will provide an update shortly.",
+            "This has been escalated to the development team for immediate attention.",
+            "The issue has been reproduced and we're working on a fix.",
+            "Please provide additional details about when this issue occurs.",
+            "A temporary workaround has been implemented while we develop a permanent solution.",
+            "This feature has been added to our roadmap for the next release.",
+            "The problem has been identified and a fix will be deployed tomorrow.",
+            "Thank you for reporting this. We'll investigate and get back to you.",
+            "This is a known issue that will be addressed in the upcoming maintenance window.",
+            "The requested feature aligns with our product strategy and will be prioritized.",
+            "We need to schedule a meeting to discuss the requirements in detail.",
+            "The issue was caused by a recent configuration change. It has been reverted.",
+            "This improvement will significantly benefit our users. Moving forward with implementation.",
+            "The bug has been fixed and deployed to production. Please verify the resolution.",
+            "Additional testing is required before we can implement this change."
+        ]
+        
+        # Add comments to some tickets
+        for i, ticket in enumerate(all_tickets):
+            if i % 2 == 0:  # Add comments to every other ticket
+                # Add 1-3 comments per ticket
+                num_comments = random.randint(1, 3)
+                for j in range(num_comments):
+                    commenter = all_profiles[random.randint(0, len(all_profiles) - 1)]
+                    comment_text = comment_templates[random.randint(0, len(comment_templates) - 1)]
+                    is_internal = random.choice([True, False]) if j == 0 else False  # First comment might be internal
+                    
+                    comment = TicketComment(
+                        id=str(uuid.uuid4()),
+                        ticket_id=ticket.id,
+                        user_id=commenter.id,
+                        comment=comment_text,
+                        is_internal=is_internal,
+                        created_at=datetime.now() - timedelta(hours=i * 2 + j * 6),
+                        updated_at=datetime.now() - timedelta(hours=i * 2 + j * 6)
+                    )
+                    db.add(comment)
+        
+        db.commit()
+        print("✅ Ticket comments seeded successfully!")
 
     except Exception as e:
         print(f"❌ Error seeding database: {e}")

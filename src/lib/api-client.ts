@@ -648,6 +648,60 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Tickets
+  async getTickets(params: any = {}) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, String(value));
+      }
+    });
+    return this.request(`/tickets/?${queryParams.toString()}`);
+  }
+
+  async getTicket(id: string) {
+    return this.request(`/tickets/${id}`);
+  }
+
+  async createTicket(data: any) {
+    return this.request('/tickets/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateTicket(id: string, data: any) {
+    return this.request(`/tickets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteTicket(id: string) {
+    return this.request(`/tickets/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getTicketStats() {
+    return this.request('/tickets/stats/summary');
+  }
+
+  async getTicketComments(ticketId: string, includeInternal = false) {
+    const params = new URLSearchParams();
+    if (includeInternal) {
+      params.append('include_internal', 'true');
+    }
+    return this.request(`/tickets/${ticketId}/comments?${params.toString()}`);
+  }
+
+  async addTicketComment(ticketId: string, data: any) {
+    return this.request(`/tickets/${ticketId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const apiClient = new ApiClient();
