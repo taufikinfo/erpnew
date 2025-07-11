@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,14 +18,6 @@ import {
   ArrowDown,
   Filter
 } from 'lucide-react';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
 
 export interface ColumnDef<T> {
   id: string;
@@ -50,7 +42,7 @@ interface AdvancedDataTableProps<T> {
   defaultPageSize?: number;
 }
 
-export function AdvancedDataTable<T extends Record<string, any>>({
+export function AdvancedDataTable<T extends Record<string, unknown>>({
   data,
   columns,
   title,
@@ -90,12 +82,30 @@ export function AdvancedDataTable<T extends Record<string, any>>({
 
     // Apply column filters
     Object.entries(columnFilters).forEach(([columnId, filterValue]) => {
-      if (filterValue) {
+      if (filterValue && filterValue.trim() !== '' && filterValue !== 'all') {
         const column = columns.find(col => col.id === columnId);
         if (column?.accessorKey) {
           filtered = filtered.filter(item => {
             const value = item[column.accessorKey!];
-            return value?.toString().toLowerCase().includes(filterValue.toLowerCase());
+            const stringValue = value?.toString() || '';
+            
+            // Handle different filter types
+            if (column.filterType === 'select') {
+              return stringValue.toLowerCase() === filterValue.toLowerCase();
+            } else if (column.filterType === 'date') {
+              // For date filtering, format both dates for comparison
+              try {
+                const itemDate = new Date(stringValue).toISOString().split('T')[0];
+                const filterDate = new Date(filterValue).toISOString().split('T')[0];
+                return itemDate === filterDate;
+              } catch {
+                // Fallback to string comparison if date parsing fails
+                return stringValue.includes(filterValue);
+              }
+            } else {
+              // Default text filtering
+              return stringValue.toLowerCase().includes(filterValue.toLowerCase());
+            }
           });
         }
       }
@@ -134,6 +144,46 @@ export function AdvancedDataTable<T extends Record<string, any>>({
     currentPage * pageSize
   );
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return; // Don't handle keyboard events when user is typing in inputs
+      }
+      
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'ArrowLeft':
+            e.preventDefault();
+            setCurrentPage(prev => Math.max(1, prev - 1));
+            break;
+          case 'ArrowRight':
+            e.preventDefault();
+            setCurrentPage(prev => Math.min(totalPages, prev + 1));
+            break;
+          case 'Home':
+            e.preventDefault();
+            setCurrentPage(1);
+            break;
+          case 'End':
+            e.preventDefault();
+            setCurrentPage(totalPages);
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [totalPages]);
+
+  // Handle page changes when data changes
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   // Visible columns
   const visibleColumns = columns.filter(col => columnVisibility[col.id]);
 
@@ -158,10 +208,15 @@ export function AdvancedDataTable<T extends Record<string, any>>({
   };
 
   const handleColumnFilterChange = (columnId: string, value: string) => {
-    setColumnFilters(prev => ({
-      ...prev,
-      [columnId]: value
-    }));
+    setColumnFilters(prev => {
+      const newFilters = { ...prev };
+      if (value === '' || value === 'all') {
+        delete newFilters[columnId];
+      } else {
+        newFilters[columnId] = value;
+      }
+      return newFilters;
+    });
     setCurrentPage(1);
   };
 
@@ -246,55 +301,85 @@ export function AdvancedDataTable<T extends Record<string, any>>({
               <Button variant="outline" size="sm">
                 <Filter className="mr-2 h-4 w-4" />
                 Filters
-                {Object.values(columnFilters).some(v => v) && (
+                {Object.values(columnFilters).some(v => v && v.trim() !== '' && v !== 'all') && (
                   <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
-                    {Object.values(columnFilters).filter(v => v).length}
+                    {Object.values(columnFilters).filter(v => v && v.trim() !== '' && v !== 'all').length}
                   </Badge>
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80" align="end">
-              <div className="space-y-4">
-                <h4 className="font-medium text-sm">Advanced Filters</h4>
-                {columns.filter(col => col.filterable).map(column => (
-                  <div key={column.id} className="space-y-2">
-                    <Label className="text-sm">{column.header}</Label>
-                    {column.filterType === 'select' && column.filterOptions ? (
-                      <Select
-                        value={columnFilters[column.id] || ''}
-                        onValueChange={(value) => handleColumnFilterChange(column.id, value)}
-                      >
-                        <SelectTrigger className="h-8">
-                          <SelectValue placeholder={`Select ${column.header}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">All</SelectItem>
-                          {column.filterOptions.map(option => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input
-                        placeholder={`Filter by ${column.header}`}
-                        value={columnFilters[column.id] || ''}
-                        onChange={(e) => handleColumnFilterChange(column.id, e.target.value)}
-                        className="h-8"
-                      />
-                    )}
-                  </div>
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setColumnFilters({});
-                    setCurrentPage(1);
-                  }}
-                  className="w-full"
-                >
-                  Clear Filters
-                </Button>
+            <PopoverContent 
+              className="w-80 max-h-96 overflow-y-auto bg-white border shadow-lg" 
+              align="end" 
+              side="bottom"
+              sideOffset={5}
+            >
+              <div className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm text-gray-900">Advanced Filters</h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setColumnFilters({});
+                      setCurrentPage(1);
+                    }}
+                    className="h-6 text-xs text-gray-600 hover:text-gray-900"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+                
+                {(() => {
+                  const filterableColumns = columns.filter(col => col.filterable);
+                  
+                  if (filterableColumns.length === 0) {
+                    return (
+                      <div className="p-4 text-center">
+                        <p className="text-sm text-gray-500">No filterable columns available</p>
+                      </div>
+                    );
+                  }
+                  
+                  return filterableColumns.map(column => (
+                    <div key={column.id} className="space-y-2 p-3 border rounded bg-gray-50">
+                      <Label className="text-sm font-medium text-gray-700">{column.header}</Label>
+                      {column.filterType === 'select' && column.filterOptions ? (
+                        <Select
+                          value={columnFilters[column.id] || 'all'}
+                          onValueChange={(value) => handleColumnFilterChange(column.id, value)}
+                        >
+                          <SelectTrigger className="h-8 bg-white">
+                            <SelectValue placeholder={`Select ${column.header}`} />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white">
+                            <SelectItem value="all">All</SelectItem>
+                            {column.filterOptions.map(option => (
+                              <SelectItem key={option} value={option}>
+                                {option.charAt(0).toUpperCase() + option.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : column.filterType === 'date' ? (
+                        <Input
+                          type="date"
+                          placeholder={`Filter by ${column.header}`}
+                          value={columnFilters[column.id] || ''}
+                          onChange={(e) => handleColumnFilterChange(column.id, e.target.value)}
+                          className="h-8 bg-white"
+                        />
+                      ) : (
+                        <Input
+                          placeholder={`Filter by ${column.header}`}
+                          value={columnFilters[column.id] || ''}
+                          onChange={(e) => handleColumnFilterChange(column.id, e.target.value)}
+                          className="h-8 bg-white"
+                        />
+                      )}
+                    </div>
+                  ));
+                })()}
               </div>
             </PopoverContent>
           </Popover>
@@ -395,42 +480,53 @@ export function AdvancedDataTable<T extends Record<string, any>>({
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
             <div className="text-sm text-gray-500">
-              Page {currentPage} of {totalPages}
+              Page {currentPage} of {totalPages} • Showing {paginatedData.length} of {filteredAndSortedData.length} results
             </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  />
-                </PaginationItem>
-                
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const page = i + 1;
-                  return (
-                    <PaginationItem key={page}>
-                      <PaginationLink
-                        onClick={() => setCurrentPage(page)}
-                        isActive={currentPage === page}
-                        className="cursor-pointer"
-                      >
-                        {page}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                })}
-                
-                <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+            
+            {/* Simple Pagination Buttons */}
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="h-8 px-3"
+              >
+                First
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="h-8 px-3"
+              >
+                Previous
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="h-8 px-3"
+              >
+                Next
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="h-8 px-3"
+              >
+                Last
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>
