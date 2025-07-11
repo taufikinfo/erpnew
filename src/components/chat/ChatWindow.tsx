@@ -1,6 +1,17 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+impor  if (!user) {
+    return (
+      <Card className="min-h-[400px] max-h-[80vh] flex flex-col">
+        <CardContent className="flex items-center justify-center h-full">
+          <p className="text-muted-foreground">Please log in to access chat</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="min-h-[400px] max-h-[80vh] flex flex-col")rdContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
